@@ -203,17 +203,24 @@ export class GPTImage1Provider extends ImageProvider {
         requestParams
       );
 
+      const isVercel = process.env.VERCEL === '1';
+      console.log(`🖼️ Running on ${isVercel ? 'Vercel' : 'local'} environment`);
+
       const stream = await posthogOpenAI.images.generate(requestParams);
 
       let finalImageSent = false;
+      let partialCount = 0;
+      let eventCount = 0;
       
       // Handle the stream response
       for await (const event of stream as any) {
-        console.log("🖼️ Stream event:", {
+        eventCount++;
+        console.log(`🖼️ Stream event #${eventCount}:`, {
           type: event.type,
           hasB64Json: !!event.b64_json,
           hasPartialImageIndex: event.partial_image_index !== undefined,
           keys: Object.keys(event),
+          isVercel,
         });
 
         if (event.type === "image_generation.partial_image") {
@@ -222,6 +229,7 @@ export class GPTImage1Provider extends ImageProvider {
           
           if (imageBase64) {
             console.log(`🖼️ Received partial image ${idx}`);
+            partialCount++;
             
             // Convert base64 to Uint8Array
             const binaryString = atob(imageBase64);
@@ -244,7 +252,7 @@ export class GPTImage1Provider extends ImageProvider {
           const revisedPrompt = event.revised_prompt;
           
           if (imageBase64) {
-            console.log("🖼️ Received final image");
+            console.log(`🖼️ Received final image (after ${partialCount} partials)`);
             
             // Convert base64 to Uint8Array
             const binaryString = atob(imageBase64);
@@ -268,7 +276,7 @@ export class GPTImage1Provider extends ImageProvider {
       
       // If we didn't send a final image, something went wrong
       if (!finalImageSent) {
-        console.log("🖼️ Stream ended without final image");
+        console.log(`🖼️ Stream ended without final image after ${eventCount} events`);
         throw new Error("Stream ended without receiving final image");
       }
     } catch (error) {

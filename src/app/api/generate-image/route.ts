@@ -305,8 +305,10 @@ export async function POST(request: NextRequest) {
     return new NextResponse(stream, {
       headers: {
         "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
+        "Cache-Control": "no-cache, no-transform",
         Connection: "keep-alive",
+        "X-Accel-Buffering": "no", // Disable buffering on nginx/proxies
+        "Transfer-Encoding": "chunked",
       },
     });
   } catch (error) {
