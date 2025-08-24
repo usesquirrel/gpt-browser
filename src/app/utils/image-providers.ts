@@ -189,14 +189,13 @@ export class GPTImage1Provider extends ImageProvider {
     });
 
     try {
-      // Use the correct parameters for streaming - partial_images is a top-level parameter
       const requestParams = {
-        prompt: validatedPrompt,
         model: this.modelName,
+        prompt: validatedPrompt,
         size: size as any,
         stream: true,
         partial_images: partialImages,
-      } as any;
+      };
 
       console.log(
         "🖼️ Making streaming OpenAI API call with params:",
@@ -206,7 +205,9 @@ export class GPTImage1Provider extends ImageProvider {
       const isVercel = process.env.VERCEL === '1';
       console.log(`🖼️ Running on ${isVercel ? 'Vercel' : 'local'} environment`);
 
-      const stream = await posthogOpenAI.images.generate(requestParams);
+      const stream = (await posthogOpenAI.images.generate(
+        requestParams
+      )) as any;
       
       // Debug what we actually received
       console.log(`🖼️ Stream response type:`, {
