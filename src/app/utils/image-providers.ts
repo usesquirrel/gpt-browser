@@ -210,13 +210,13 @@ export class GPTImage1Provider extends ImageProvider {
       
       // Debug what we actually received
       console.log(`🖼️ Stream response type:`, {
-        isAsyncIterable: stream && typeof stream[Symbol.asyncIterator] === 'function',
-        isIterable: stream && typeof stream[Symbol.iterator] === 'function',
+        isAsyncIterable: stream && typeof (stream as any)[Symbol.asyncIterator] === 'function',
+        isIterable: stream && typeof (stream as any)[Symbol.iterator] === 'function',
         streamType: typeof stream,
-        streamConstructor: stream?.constructor?.name,
+        streamConstructor: (stream as any)?.constructor?.name,
         hasData: !!(stream as any)?.data,
         hasIterator: !!(stream as any)?.[Symbol.asyncIterator],
-        keys: stream ? Object.keys(stream).slice(0, 10) : [], // First 10 keys only
+        keys: stream ? Object.keys(stream as any).slice(0, 10) : [], // First 10 keys only
       });
       
       // Check if it's actually a non-streaming response
