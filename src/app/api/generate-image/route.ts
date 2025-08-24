@@ -5,7 +5,8 @@ import { ImageProviderFactory } from "@/app/utils/image-providers";
 import { validateURL } from "@/app/utils/validate-url";
 import { getCachedImage, cacheImage } from "@/app/utils/image-cache";
 
-export const maxDuration = 60; // Maximum allowed on Vercel Pro
+export const runtime = 'nodejs';
+export const maxDuration = 300; // Pro plan cap for Node.js Serverless
 
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();

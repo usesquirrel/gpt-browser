@@ -4,7 +4,8 @@ import { cleanHTML } from "@/app/utils/clean-html";
 import { generateImagePromptFromHTML } from "@/app/utils/describe-html";
 import { ImageProviderFactory } from "@/app/utils/image-providers";
 
-export const maxDuration = 60;
+export const runtime = 'nodejs';
+export const maxDuration = 300; // Pro plan cap for Node.js Serverless
 
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
