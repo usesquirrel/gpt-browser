@@ -21,12 +21,14 @@ export default function Home() {
         console.log('✅ PostHog test result:', result);
         
         // Track the test in PostHog web analytics too
-        posthog?.capture('llm_observability_test', {
-          success: result.success,
-          response: result.success ? result.response : undefined,
-          error: result.success ? undefined : result.error,
-          usage: result.success ? result.usage : undefined,
-        });
+        if (result) {
+          posthog?.capture('llm_observability_test', {
+            success: result.success,
+            response: result.success && 'response' in result ? result.response : undefined,
+            error: !result.success && 'error' in result ? result.error : undefined,
+            usage: result.success && 'usage' in result ? result.usage : undefined,
+          });
+        }
       } catch (error) {
         console.error('❌ PostHog test failed:', error);
         posthog?.capture('llm_observability_test', {
