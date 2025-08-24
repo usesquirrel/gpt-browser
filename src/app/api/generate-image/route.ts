@@ -219,18 +219,24 @@ export async function POST(request: NextRequest) {
 
             if (result.isPartial) {
               // Send partial image
+              const partialData = JSON.stringify({
+                step: "partial_image",
+                message: `Partial image ${result.partialIndex} received...`,
+                image: result.base64,
+                mediaType: result.mediaType,
+                isPartial: true,
+                partialIndex: result.partialIndex,
+              });
+              
+              // Send the partial image data
               controller.enqueue(
-                encoder.encode(
-                  `data: ${JSON.stringify({
-                    step: "partial_image",
-                    message: `Partial image ${result.partialIndex} received...`,
-                    image: result.base64,
-                    mediaType: result.mediaType,
-                    isPartial: true,
-                    partialIndex: result.partialIndex,
-                  })}\n\n`
-                )
+                encoder.encode(`data: ${partialData}\n\n`)
               );
+              
+              // Add padding comment to force flush (2KB padding to bypass any buffering)
+              // This is a workaround for Vercel's potential buffering
+              const padding = `:${' '.repeat(2048)}\n\n`;
+              controller.enqueue(encoder.encode(padding));
             } else {
               // Final image
               const imageTime = Date.now() - imageStartTime;

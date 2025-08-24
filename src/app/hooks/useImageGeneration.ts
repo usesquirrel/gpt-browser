@@ -97,6 +97,7 @@ export function useImageGeneration() {
 
           for (const line of lines) {
             if (line.trim() === "") continue; // Skip empty lines
+            if (line.startsWith(":")) continue; // Skip SSE comments (used for padding)
             
             if (line.startsWith("data: ")) {
               const data = line.slice(6).trim();
