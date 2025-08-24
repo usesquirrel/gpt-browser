@@ -188,165 +188,88 @@ export class GPTImage1Provider extends ImageProvider {
       partialImages,
     });
 
-    let lastPartialImage: ImageGenerationResult | null = null;
-
     try {
+      // Use the correct parameters for streaming - partial_images is a top-level parameter
       const requestParams = {
-        model: this.modelName,
         prompt: validatedPrompt,
+        model: this.modelName,
         size: size as any,
         stream: true,
         partial_images: partialImages,
-      };
+      } as any;
 
       console.log(
         "🖼️ Making streaming OpenAI API call with params:",
         requestParams
       );
 
-      const stream = (await posthogOpenAI.images.generate(
-        requestParams
-      )) as any;
+      const stream = await posthogOpenAI.images.generate(requestParams);
 
-      for await (const event of stream) {
+      let finalImageSent = false;
+      
+      // Handle the stream response
+      for await (const event of stream as any) {
         console.log("🖼️ Stream event:", {
           type: event.type,
-          hasData: !!event.data,
-          hasB64Json: !!(event as any).b64_json,
+          hasB64Json: !!event.b64_json,
+          hasPartialImageIndex: event.partial_image_index !== undefined,
           keys: Object.keys(event),
         });
 
-        if ((event as any).type === "image_generation.partial_image") {
-          const base64Data = (event as any).b64_json;
-          const partialIndex = (event as any).partial_image_index;
-
-          console.log("🖼️ Received partial image:", {
-            index: partialIndex,
-            base64Length: base64Data?.length,
-          });
-
-          if (base64Data) {
+        if (event.type === "image_generation.partial_image") {
+          const idx = event.partial_image_index;
+          const imageBase64 = event.b64_json;
+          
+          if (imageBase64) {
+            console.log(`🖼️ Received partial image ${idx}`);
+            
             // Convert base64 to Uint8Array
-            const binaryString = atob(base64Data);
+            const binaryString = atob(imageBase64);
             const bytes = new Uint8Array(binaryString.length);
             for (let i = 0; i < binaryString.length; i++) {
               bytes[i] = binaryString.charCodeAt(i);
             }
 
-            const partialResult = {
-              base64: base64Data,
+            yield {
+              base64: imageBase64,
               uint8Array: bytes,
               mediaType: "image/png",
               isPartial: true,
-              partialIndex,
+              partialIndex: idx,
             };
-
-            lastPartialImage = partialResult; // Keep track of the last partial
-            yield partialResult;
           }
-        } else if ((event as any).type === "image_generation.image") {
-          // Final image with actual image data
-          const imageData = (event as any).data || event;
-          let base64Data: string;
-          let revisedPrompt: string | undefined;
-
-          if (imageData.b64_json) {
-            base64Data = imageData.b64_json;
-            revisedPrompt = imageData.revised_prompt;
-          } else if (imageData.url) {
-            console.log(
-              "🖼️ Received final image URL, fetching to convert to base64"
-            );
-            const imageResponse = await fetch(imageData.url);
-            const imageBuffer = await imageResponse.arrayBuffer();
-            base64Data = Buffer.from(imageBuffer).toString("base64");
-            revisedPrompt = imageData.revised_prompt;
-          } else {
-            console.log("🖼️ Final image event but no image data found");
-            continue;
-          }
-
-          console.log(
-            "🖼️ Received final image, base64 length:",
-            base64Data.length
-          );
-
-          // Convert base64 to Uint8Array
-          const binaryString = atob(base64Data);
-          const bytes = new Uint8Array(binaryString.length);
-          for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-          }
-
-          yield {
-            base64: base64Data,
-            uint8Array: bytes,
-            mediaType: "image/png",
-            revisedPrompt,
-            isPartial: false,
-          };
-        } else if ((event as any).type === "image_generation.completed") {
-          console.log(
-            "🖼️ Stream completed - checking for final image data in completed event"
-          );
-
-          // Check if the completed event has image data
-          const imageData = (event as any).data || event;
-          if (imageData && (imageData.b64_json || imageData.url)) {
-            let base64Data: string;
-            let revisedPrompt: string | undefined;
-
-            if (imageData.b64_json) {
-              base64Data = imageData.b64_json;
-              revisedPrompt = imageData.revised_prompt;
-            } else if (imageData.url) {
-              console.log(
-                "🖼️ Received final image URL in completed event, fetching to convert to base64"
-              );
-              const imageResponse = await fetch(imageData.url);
-              const imageBuffer = await imageResponse.arrayBuffer();
-              base64Data = Buffer.from(imageBuffer).toString("base64");
-              revisedPrompt = imageData.revised_prompt;
-            } else {
-              base64Data = "";
+        } else if (event.type === "image_generation.completed" || event.b64_json) {
+          // Final image event
+          const imageBase64 = event.b64_json;
+          const revisedPrompt = event.revised_prompt;
+          
+          if (imageBase64) {
+            console.log("🖼️ Received final image");
+            
+            // Convert base64 to Uint8Array
+            const binaryString = atob(imageBase64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
             }
 
-            if (base64Data) {
-              console.log(
-                "🖼️ Found final image in completed event, base64 length:",
-                base64Data.length
-              );
-
-              // Convert base64 to Uint8Array
-              const binaryString = atob(base64Data);
-              const bytes = new Uint8Array(binaryString.length);
-              for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-              }
-
-              yield {
-                base64: base64Data,
-                uint8Array: bytes,
-                mediaType: "image/png",
-                revisedPrompt,
-                isPartial: false,
-              };
-            }
-          } else if (lastPartialImage) {
-            // If no final image in completed event, use the last partial as final
-            console.log(
-              "🖼️ No final image in completed event, promoting last partial to final image"
-            );
             yield {
-              ...lastPartialImage,
-              isPartial: false, // Convert partial to final
+              base64: imageBase64,
+              uint8Array: bytes,
+              mediaType: "image/png",
+              revisedPrompt,
+              isPartial: false,
             };
-          } else {
-            console.log("🖼️ Stream completed but no image data available");
+            
+            finalImageSent = true;
           }
-
-          return; // Always exit after completed event
         }
+      }
+      
+      // If we didn't send a final image, something went wrong
+      if (!finalImageSent) {
+        console.log("🖼️ Stream ended without final image");
+        throw new Error("Stream ended without receiving final image");
       }
     } catch (error) {
       console.error("🖼️ GPT-Image-1 streaming failed:", error);

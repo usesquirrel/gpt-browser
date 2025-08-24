@@ -30,6 +30,19 @@ export default function DesktopScreen({
   const [transformOrigin, setTransformOrigin] = useState("top left");
   const [translateX, setTranslateX] = useState(0);
 
+  // Helper function to normalize URLs
+  const normalizeUrl = (inputUrl: string): string => {
+    const trimmed = inputUrl.trim();
+    if (!trimmed) return trimmed;
+    
+    // Check if URL already has a protocol
+    if (!/^https?:\/\//i.test(trimmed)) {
+      // Add https:// if no protocol is specified
+      return `https://${trimmed}`;
+    }
+    return trimmed;
+  };
+
   useEffect(() => {
     setLocalUrl(url || "");
   }, [url]);
@@ -156,7 +169,7 @@ export default function DesktopScreen({
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && localUrl && !isGenerating) {
-                      onNavigate?.(localUrl);
+                      onNavigate?.(normalizeUrl(localUrl));
                     }
                   }}
                   placeholder="Enter a website URL"
@@ -164,11 +177,12 @@ export default function DesktopScreen({
                     !localUrl ? "text-gray-500" : "text-gray-700"
                   } ${isCached ? "pl-10 pr-5" : "px-5"}`}
                   disabled={isGenerating}
+                  suppressHydrationWarning
                 />
               </div>
               <button
                 onClick={() =>
-                  localUrl && !isGenerating && onNavigate?.(localUrl)
+                  localUrl && !isGenerating && onNavigate?.(normalizeUrl(localUrl))
                 }
                 disabled={!localUrl || isGenerating}
                 className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
