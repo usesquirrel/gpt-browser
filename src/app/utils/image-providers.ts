@@ -207,6 +207,22 @@ export class GPTImage1Provider extends ImageProvider {
       console.log(`🖼️ Running on ${isVercel ? 'Vercel' : 'local'} environment`);
 
       const stream = await posthogOpenAI.images.generate(requestParams);
+      
+      // Debug what we actually received
+      console.log(`🖼️ Stream response type:`, {
+        isAsyncIterable: stream && typeof stream[Symbol.asyncIterator] === 'function',
+        isIterable: stream && typeof stream[Symbol.iterator] === 'function',
+        streamType: typeof stream,
+        streamConstructor: stream?.constructor?.name,
+        hasData: !!(stream as any)?.data,
+        hasIterator: !!(stream as any)?.[Symbol.asyncIterator],
+        keys: stream ? Object.keys(stream).slice(0, 10) : [], // First 10 keys only
+      });
+      
+      // Check if it's actually a non-streaming response
+      if ((stream as any)?.data && !(stream as any)?.[Symbol.asyncIterator]) {
+        console.log(`🖼️ WARNING: Received non-streaming response despite stream: true`);
+      }
 
       let finalImageSent = false;
       let partialCount = 0;
