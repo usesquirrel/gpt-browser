@@ -193,17 +193,17 @@ export default function Home() {
                     onClick={() =>
                       handleNavigate("https://squirrelrecruit.com")
                     }
-                    className="group relative bg-white rounded-xl p-3 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-orange-200 hover:scale-102 active:scale-95"
+                    className="group relative bg-gradient-to-br from-purple-50 to-white rounded-xl p-3 shadow-lg hover:shadow-xl transition-all duration-300 border border-purple-200 hover:border-purple-300 hover:scale-102 active:scale-95"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-lg flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
                         <span className="text-white text-lg">🐿️</span>
                       </div>
                       <div className="text-left min-w-0 flex-1">
                         <h3 className="font-semibold text-gray-900 text-lg truncate">
-                          SquirrelRecruit
+                          Squirrel
                         </h3>
-                        <p className="text-gray-500 text-md truncate">
+                        <p className="text-purple-600 text-md truncate">
                           squirrelrecruit.com
                         </p>
                       </div>
@@ -256,10 +256,10 @@ export default function Home() {
                         "https://tenor.com/en-GB/view/sugarbush-sugar-nuts-squirrel-gif-17534167325502687818"
                       )
                     }
-                    className="group relative bg-white rounded-xl p-3 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-purple-200 hover:scale-102 active:scale-95"
+                    className="group relative bg-white rounded-xl p-3 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-green-200 hover:scale-102 active:scale-95"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
                         <span className="text-white text-lg">🎬</span>
                       </div>
                       <div className="text-left min-w-0 flex-1">
