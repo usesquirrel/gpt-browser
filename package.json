@@ -1,7 +1,29 @@
 {
   "name": "gpt-browser",
   "version": "0.1.0",
-  "private": true,
+  "description": "AI-powered web browser visualization tool that generates realistic screenshot-like images of websites using OpenAI's GPT models",
+  "author": "GPT Browser Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usesquirrel/gpt-browser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/usesquirrel/gpt-browser/issues"
+  },
+  "homepage": "https://github.com/usesquirrel/gpt-browser#readme",
+  "keywords": [
+    "openai",
+    "gpt",
+    "ai",
+    "website",
+    "screenshot",
+    "visualization",
+    "nextjs",
+    "react",
+    "typescript"
+  ],
+  "private": false,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",

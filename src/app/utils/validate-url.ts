@@ -42,9 +42,9 @@ export async function validateURL(url: string): Promise<URLValidationResult> {
       }
     }
 
-    // Use GPT-5-mini for content safety validation
+    // Use GPT-5-nano for content safety validation (faster and cheaper)
     const response = await posthogOpenAI.chat.completions.create({
-      model: "gpt-5-mini",
+      model: "gpt-5-nano",
       messages: [
         {
           role: "system",

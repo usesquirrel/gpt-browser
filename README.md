@@ -1,101 +1,411 @@
-# GPT Browser
+# GPT Browser 🌐✨
 
-An AI-powered web browser that generates visual representations of websites using GPT-Image models. The application fetches HTML content from URLs and creates screenshot-like images showing what the websites would look like when rendered.
+An AI-powered web browser visualization tool that generates realistic screenshot-like images of websites using OpenAI's GPT-Image-1 model. Enter any URL and watch as AI creates a visual representation of what the website looks like, complete with progressive image streaming for real-time feedback.
 
-## Features
+![GPT Browser Demo](https://img.shields.io/badge/demo-live-green) ![Version](https://img.shields.io/badge/version-0.1.0-blue) ![License](https://img.shields.io/badge/license-MIT-orange)
 
-- 🎨 **AI-Generated Website Visualizations**: Creates realistic website screenshots using GPT-Image-1
-- 🖥️ **Desktop UI Simulation**: Displays results in a simulated desktop environment with browser chrome  
-- ⚡ **Real-time Streaming**: Shows partial images as they're generated for better UX
-- 🔄 **Smart Caching**: Uses Vercel Blob storage to cache generated images for faster repeat visits
-- 🛡️ **URL Validation**: AI-powered safety checking before processing URLs
-- 📱 **Responsive Design**: Works on desktop and mobile devices
+## 🎯 What It Does
 
-## Architecture
+GPT Browser fetches the HTML content from any website URL and uses AI to:
+1. Analyze the website's structure and content
+2. Generate a detailed visual description
+3. Create a realistic screenshot-like image showing how the website would appear when rendered
+4. Cache results for instant future access
 
-The app processes URLs through several steps:
-1. **Cache Check**: First checks if we already have an image for this URL
-2. **URL Validation**: AI validates the URL for safety and content appropriateness
-3. **HTML Fetching**: Retrieves and processes the website's HTML content
-4. **Content Analysis**: AI analyzes the HTML to understand the visual structure
-5. **Image Generation**: Creates a visual representation using GPT-Image-1
-6. **Caching**: Stores the result in Vercel Blob storage for future use
+This is particularly useful for:
+- Previewing websites without fully loading them
+- Creating visual documentation of web pages
+- Generating website thumbnails at scale
+- Understanding website layouts through AI interpretation
 
-## Setup
+## ✨ Key Features
 
-First, copy the environment variables:
+- **🎨 AI-Generated Website Visualizations**: Creates realistic website screenshots using GPT-Image-1
+- **🖥️ Desktop Browser Simulation**: Displays results in a simulated desktop environment with browser chrome
+- **⚡ Real-time Streaming**: Shows partial images as they're generated for progressive loading
+- **💾 Smart Caching System**: Uses Vercel Blob storage to cache generated images (instant loads on repeat visits)
+- **🛡️ URL Safety Validation**: AI-powered safety checking before processing URLs
+- **📊 Comprehensive Analytics**: PostHog integration for usage tracking and LLM observability
+- **📱 Responsive Design**: Works seamlessly on desktop and mobile devices
+- **🔄 Dual Generation Mode**: Experimental endpoint for comparing different generation approaches
 
+## 🏗️ Technical Architecture
+
+### Technology Stack
+
+- **Frontend**: Next.js 15.4.6 with React 19, TypeScript, Tailwind CSS 4
+- **AI Models**: 
+  - OpenAI GPT-5-nano (HTML cleaning, URL validation)
+  - OpenAI GPT-5-mini (HTML description)
+  - OpenAI GPT-Image-1 (image generation)
+- **Storage**: Vercel Blob Storage for image caching
+- **Analytics**: PostHog for web analytics and LLM observability
+- **Deployment**: Vercel with Edge Functions
+
+### Processing Pipeline
+
+```mermaid
+graph LR
+    A[User enters URL] --> B[Cache Check]
+    B -->|Hit| C[Return Cached Image]
+    B -->|Miss| D[URL Validation]
+    D --> E[Fetch HTML]
+    E --> F[Clean HTML]
+    F --> G[Generate Description]
+    G --> H[Generate Image]
+    H --> I[Cache Result]
+    I --> J[Return Image]
+```
+
+### Project Structure
+
+```
+gpt-browser/
+├── src/
+│   └── app/
+│       ├── api/
+│       │   ├── generate-image/          # Main image generation endpoint
+│       │   │   └── route.ts            # Handles streaming & caching
+│       │   └── generate-image-dual/     # Experimental dual generation
+│       │       └── route.ts
+│       ├── components/
+│       │   ├── DesktopScreen.tsx       # Desktop browser UI simulation
+│       │   ├── PostHogPageView.tsx     # Analytics tracking component
+│       │   └── PostHogProvider.tsx     # PostHog context provider
+│       ├── hooks/
+│       │   ├── useImageGeneration.ts   # Main streaming hook
+│       │   └── useDualImageGeneration.ts # Dual generation hook
+│       ├── lib/
+│       │   └── openai.ts              # OpenAI client with PostHog integration
+│       ├── utils/
+│       │   ├── clean-html.ts          # HTML cleaning with GPT
+│       │   ├── describe-html.ts       # HTML to image prompt conversion
+│       │   ├── fetch-html.ts          # URL fetching with headers
+│       │   ├── image-cache.ts         # Vercel Blob caching logic
+│       │   ├── image-providers.ts     # Image generation providers
+│       │   ├── validate-url.ts        # AI-powered URL validation
+│       │   └── html-to-image.ts       # Main orchestration
+│       ├── layout.tsx                  # Root layout with providers
+│       └── page.tsx                    # Main application page
+├── public/                             # Static assets
+├── .env.example                        # Environment variables template
+├── package.json                        # Dependencies and scripts
+├── tailwind.config.ts                 # Tailwind configuration
+├── next.config.mjs                    # Next.js configuration
+└── tsconfig.json                      # TypeScript configuration
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ and npm/yarn
+- OpenAI API key with access to GPT-5-nano, GPT-5-mini, and GPT-Image-1
+- Vercel account (for Blob storage and deployment)
+- PostHog account (optional, for analytics)
+
+### Installation
+
+1. **Clone the repository:**
+```bash
+git clone https://github.com/usesquirrel/gpt-browser.git
+cd gpt-browser
+```
+
+2. **Install dependencies:**
+```bash
+yarn install
+# or
+npm install
+```
+
+3. **Set up environment variables:**
 ```bash
 cp .env.example .env.local
 ```
 
-Edit `.env.local` and add your API keys:
-- `OPENAI_API_KEY`: Your OpenAI API key (get from https://platform.openai.com/api-keys)
-- `BLOB_READ_WRITE_TOKEN`: Your Vercel Blob storage token (get from https://vercel.com/dashboard/stores)
+4. **Configure your `.env.local`:**
+```env
+# Required
+OPENAI_API_KEY=sk-proj-...                    # Your OpenAI API key
 
-Then run the development server:
+# Required for caching
+BLOB_READ_WRITE_TOKEN=vercel_blob_...         # Vercel Blob storage token
 
-```bash
-npm run dev
-# or
-yarn dev
+# Optional - PostHog Analytics
+NEXT_PUBLIC_POSTHOG_KEY=phc_...               # PostHog project API key
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com # PostHog host
+
+# Optional - Vercel KV (if using KV for caching)
+KV_URL=...
+KV_REST_API_URL=...
+KV_REST_API_TOKEN=...
+KV_REST_API_READ_ONLY_TOKEN=...
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. **Run the development server:**
+```bash
+yarn dev
+# or
+npm run dev
+```
 
-## Usage
+6. **Open [http://localhost:3000](http://localhost:3000)**
 
-1. Enter any website URL in the browser address bar
-2. Click "Go" or press Enter
-3. The app will check its cache first - if found, the image loads instantly
-4. If not cached, it will generate a new visualization and cache it for next time
-5. Watch as partial images appear during generation for real-time feedback
+## 📖 API Documentation
 
-## Caching System
+### POST `/api/generate-image`
 
-The app uses Vercel Blob storage to cache generated images:
+Main endpoint for generating website visualizations with streaming support.
 
-- **Cache Keys**: Generated using SHA-256 hash of the URL for consistency
-- **Storage**: Images stored as binary data, metadata as JSON
-- **Performance**: Cache hits return results instantly (< 100ms vs 10-30s generation)
-- **Persistence**: Cached images persist across deployments and sessions
+**Request Body:**
+```json
+{
+  "url": "https://example.com"
+}
+```
 
-## Observability & Analytics
+**Response:** Server-Sent Events (SSE) stream
+```
+data: {"step":"checking_cache","message":"Checking image cache..."}
+data: {"step":"validating","message":"Validating URL safety..."}
+data: {"step":"fetching","message":"Fetching HTML from URL..."}
+data: {"step":"describing","message":"Analyzing website structure..."}
+data: {"step":"generating","message":"Generating image..."}
+data: {"step":"partial_image","image":"base64...","partialIndex":0}
+data: {"step":"completed","image":"base64...","mediaType":"image/png"}
+data: [DONE]
+```
 
-The app includes comprehensive observability powered by PostHog:
+### PUT `/api/generate-image`
 
-### Web Analytics
-- **User Interactions**: Page views, button clicks, navigation events
-- **Performance Metrics**: Image generation completion rates, cache hit rates
-- **Error Tracking**: Failed generations, validation errors
+Non-streaming version for simpler integrations.
 
-### LLM Observability  
-- **Token Usage**: Prompt/completion tokens for all AI operations with automatic cost calculation
-- **Latency Tracking**: Response times for each AI model call
-- **Cost Monitoring**: Real-time cost tracking with current OpenAI pricing (GPT-5-nano: $0.075/$0.30, GPT-5-mini: $0.15/$0.60 per 1M tokens)
-- **Error Rates**: Success/failure rates for each AI operation with detailed error messages
-- **Model Performance**: Comprehensive tracking across GPT-5-nano, GPT-5-mini, and GPT-Image-1
-- **Trace Correlation**: Unique trace IDs link related operations across the pipeline
-- **Content Analysis**: Input/output length tracking with content previews (PII-safe)
+**Request/Response:** Same as POST but returns JSON directly without streaming.
 
-### Tracked Operations
-- `html_cleaning`: GPT-5-nano cleaning raw HTML
-- `html_description`: GPT-5-mini generating image prompts from HTML
-- `image_generation`: GPT-Image-1 creating website visualizations
+### POST `/api/generate-image-dual`
 
-All events include trace IDs for correlation and detailed metadata for analysis.
+Experimental endpoint that generates images using two different approaches simultaneously.
 
-## Learn More
+## 🔧 Key Components
 
-To learn more about Next.js, take a look at the following resources:
+### `useImageGeneration` Hook
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+React hook for consuming the streaming API:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```typescript
+const { state, isGenerating, generateImage, cancel, reset } = useImageGeneration();
 
-## Deploy on Vercel
+// Generate image for a URL
+await generateImage('https://example.com');
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+// Access current state
+console.log(state.step); // 'fetching', 'generating', 'completed', etc.
+console.log(state.image); // Base64 image data when completed
+console.log(state.partialImages); // Array of partial images during generation
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Image Providers
+
+The `ImageProviderFactory` supports multiple image generation models:
+
+```typescript
+// Currently supported:
+- GPTImage1Provider: OpenAI's GPT-Image-1 model
+  - Sizes: 1024x1024, 1024x1536, 1536x1024
+  - Streaming: Supports partial images (1-3)
+  - Max prompt: 32,000 characters
+```
+
+### Caching System
+
+Automatic caching with Vercel Blob:
+
+```typescript
+// Cache keys are SHA-256 hashes of URLs
+const cacheKey = generateCacheKey(url);
+
+// Cache structure:
+// - Image: stored as binary blob
+// - Metadata: JSON with revisedPrompt, timestamp, etc.
+
+// Cache hits return in <100ms
+// Cache misses trigger generation (10-60s)
+```
+
+## 🔍 How It Works
+
+### 1. URL Validation
+- AI checks if the URL is safe and appropriate
+- Blocks potentially harmful or inappropriate content
+- Categories: safe, potentially_unsafe, unsafe
+
+### 2. HTML Processing
+- Fetches HTML with appropriate headers
+- Cleans and simplifies HTML using GPT-5-nano
+- Preserves essential visual structure
+
+### 3. Description Generation
+- GPT-5-mini analyzes cleaned HTML
+- Creates detailed visual description
+- Focuses on layout, colors, typography, spacing
+
+### 4. Image Generation
+- GPT-Image-1 creates visual from description
+- Streams partial images during generation
+- Final image is 1024x1536 (portrait) for better website representation
+
+### 5. Caching
+- Stores image and metadata in Vercel Blob
+- Uses URL hash for consistent cache keys
+- Automatic cache hits on repeat requests
+
+## 📊 Observability & Monitoring
+
+### PostHog Integration
+
+The app tracks comprehensive analytics:
+
+**Web Analytics:**
+- Page views and navigation events
+- Image generation requests and completions
+- Cache hit/miss rates
+- Error rates and types
+
+**LLM Observability:**
+- Token usage for each AI call
+- Cost tracking with current pricing
+- Latency measurements
+- Success/failure rates
+- Trace IDs for request correlation
+
+**Tracked Events:**
+- `html_cleaning`: HTML simplification process
+- `html_description`: Description generation
+- `image_generation`: Image creation
+- `cache_operations`: Cache hits/misses
+
+## 🚢 Deployment
+
+### Vercel Deployment (Recommended)
+
+1. **Fork this repository**
+
+2. **Import to Vercel:**
+   - Go to [vercel.com/new](https://vercel.com/new)
+   - Import your forked repository
+   - Configure environment variables
+
+3. **Environment Variables in Vercel:**
+   - Add all variables from `.env.local`
+   - Enable Vercel Blob Storage in project settings
+   - Set function timeout to 300s (Pro plan required)
+
+4. **Function Configuration:**
+```javascript
+// Already configured in route.ts files:
+export const runtime = 'nodejs';
+export const maxDuration = 300; // 5 minutes for Pro plan
+```
+
+### Self-Hosting
+
+Can be deployed to any Node.js hosting platform that supports:
+- Next.js 15+
+- Serverless/Edge Functions
+- WebSocket/SSE for streaming
+- File storage (for caching)
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Partial images not showing:**
+- OpenAI may only send 1 partial even when requesting 3
+- This is normal behavior from the API
+- The app handles this gracefully
+
+**Timeout errors on Vercel:**
+- Ensure you're on Vercel Pro plan (300s timeout)
+- Check `maxDuration` is set in route files
+- Verify `runtime = 'nodejs'` not 'edge'
+
+**Cache not working:**
+- Verify `BLOB_READ_WRITE_TOKEN` is set
+- Check Vercel Blob Storage is enabled
+- Ensure proper permissions on token
+
+**High costs:**
+- Image generation uses significant tokens
+- Monitor usage in PostHog dashboard
+- Consider implementing rate limiting
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these guidelines:
+
+### Development Workflow
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes
+4. Run linting: `yarn lint`
+5. Build to verify: `yarn build`
+6. Commit with descriptive message
+7. Push to your fork
+8. Open a Pull Request
+
+### Code Style
+
+- TypeScript for all new code
+- Functional components with hooks
+- Tailwind CSS for styling
+- Comprehensive error handling
+- Comments for complex logic
+
+### Adding New Features
+
+When adding features, consider:
+- Backward compatibility
+- Performance impact
+- Cost implications (AI tokens)
+- User experience (loading states, errors)
+- Documentation updates
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- OpenAI for GPT-5-nano, GPT-5-mini, and GPT-Image-1 models
+- Vercel for hosting and blob storage
+- PostHog for analytics and observability
+- Next.js team for the amazing framework
+
+## 📞 Support
+
+- **Issues:** [GitHub Issues](https://github.com/usesquirrel/gpt-browser/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/usesquirrel/gpt-browser/discussions)
+
+## 🚧 Known Limitations
+
+- **Partial Images:** OpenAI's API may send fewer partial images than requested
+- **Generation Time:** Complex websites take 30-60 seconds to generate
+- **Accuracy:** AI interpretation may not perfectly match actual rendering
+- **Dynamic Content:** JavaScript-rendered content won't be captured
+- **Rate Limits:** Subject to OpenAI API rate limits
+
+## 🗺️ Roadmap
+
+- [ ] Support for more image generation models
+- [ ] Batch URL processing
+- [ ] Webhook support for async generation
+- [ ] Browser extension
+- [ ] API for third-party integrations
+- [ ] Self-hosted model support
+- [ ] WebSocket real-time updates
+
+---
+
+Made with ❤️ by the GPT Browser team

@@ -12,15 +12,11 @@ const phClient = new PostHog(
   }
 );
 
-console.log("phClient", phClient);
-
 // Create OpenAI client with PostHog integration for direct API calls
 export const posthogOpenAI = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY!,
   posthog: phClient,
 });
-
-console.log("posthogOpenAI", posthogOpenAI);
 
 // Export AI SDK OpenAI provider (unfortunately can't inject PostHog directly)
 // PostHog tracking will need to be manual for AI SDK calls
