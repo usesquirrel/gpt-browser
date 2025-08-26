@@ -47,10 +47,10 @@ export async function POST(request: NextRequest) {
             )
           );
 
-          const cachedResult = await getCachedImage(url);
+          const cachedResult = await getCachedImage(url, model);
 
           if (cachedResult && !cancelled) {
-            console.log(`🎯 Cache hit for URL: ${url}`);
+            console.log(`🎯 Cache hit for URL: ${url} with model: ${model}`);
             controller.enqueue(
               encoder.encode(
                 `data: ${JSON.stringify({
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
             return;
           }
 
-          console.log(`🔍 Cache miss for URL: ${url}, generating new image`);
+          console.log(`🔍 Cache miss for URL: ${url} with model: ${model}, generating new image`);
 
           // Step 1: Validate URL
           controller.enqueue(
@@ -249,8 +249,8 @@ export async function POST(request: NextRequest) {
                 base64: result.base64,
                 mediaType: result.mediaType,
                 revisedPrompt: result.revisedPrompt,
-              }).catch((error) => {
-                console.error(`❌ Failed to cache image for ${url}:`, error);
+              }, model).catch((error) => {
+                console.error(`❌ Failed to cache image for ${url} with model ${model}:`, error);
               });
 
               controller.enqueue(
@@ -351,10 +351,10 @@ export async function PUT(request: NextRequest) {
     }
 
     // Step 0: Check cache first
-    const cachedResult = await getCachedImage(url);
+    const cachedResult = await getCachedImage(url, model);
 
     if (cachedResult) {
-      console.log(`🎯 Cache hit for URL: ${url} (PUT endpoint)`);
+      console.log(`🎯 Cache hit for URL: ${url} with model: ${model} (PUT endpoint)`);
       return NextResponse.json({
         success: true,
         image: cachedResult.base64,
@@ -366,7 +366,7 @@ export async function PUT(request: NextRequest) {
     }
 
     console.log(
-      `🔍 Cache miss for URL: ${url}, generating new image (PUT endpoint)`
+      `🔍 Cache miss for URL: ${url} with model: ${model}, generating new image (PUT endpoint)`
     );
 
     // Step 1: Validate URL
@@ -405,9 +405,9 @@ export async function PUT(request: NextRequest) {
       base64: result.base64,
       mediaType: result.mediaType,
       revisedPrompt: result.revisedPrompt,
-    }).catch((error) => {
+    }, model).catch((error) => {
       console.error(
-        `❌ Failed to cache image for ${url} (PUT endpoint):`,
+        `❌ Failed to cache image for ${url} with model ${model} (PUT endpoint):`,
         error
       );
     });

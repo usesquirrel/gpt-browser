@@ -17,41 +17,53 @@ export interface CacheMetadata {
 }
 
 /**
- * Generate a consistent cache key for a URL using URL-encoded name + hash
+ * Generate a consistent cache key for a URL and provider using URL-encoded name + hash
  */
-export function generateCacheKey(url: string): string {
+export function generateCacheKey(url: string, provider?: string): string {
+  // Include provider in the hash to create unique keys per model
+  const cacheInput = provider ? `${url}_${provider}` : url;
+  
   // URL-encode the URL for the filename, but limit length and add hash for uniqueness
   const encodedUrl = encodeURIComponent(url)
     .replace(/[.*+?^${}()|[\]\\]/g, '_') // Replace regex special chars
     .substring(0, 100); // Limit length
   
-  // Create a hash of the URL for uniqueness
-  const hash = crypto.createHash('sha256').update(url).digest('hex').substring(0, 16);
+  // Create a hash of the URL + provider for uniqueness
+  const hash = crypto.createHash('sha256').update(cacheInput).digest('hex').substring(0, 16);
   
-  return `image-cache/${encodedUrl}_${hash}.png`;
+  // Include provider in filename if provided
+  const providerSegment = provider ? `_${provider.replace(/[^a-zA-Z0-9-]/g, '_')}` : '';
+  
+  return `image-cache/${encodedUrl}${providerSegment}_${hash}.png`;
 }
 
 /**
  * Generate a metadata key for storing additional info about cached images
  */
-export function generateMetadataKey(url: string): string {
+export function generateMetadataKey(url: string, provider?: string): string {
+  // Include provider in the hash to create unique keys per model
+  const cacheInput = provider ? `${url}_${provider}` : url;
+  
   // URL-encode the URL for the filename, but limit length and add hash for uniqueness
   const encodedUrl = encodeURIComponent(url)
     .replace(/[.*+?^${}()|[\]\\]/g, '_') // Replace regex special chars
     .substring(0, 100); // Limit length
   
-  const hash = crypto.createHash('sha256').update(url).digest('hex').substring(0, 16);
+  const hash = crypto.createHash('sha256').update(cacheInput).digest('hex').substring(0, 16);
   
-  return `image-metadata/${encodedUrl}_${hash}.json`;
+  // Include provider in filename if provided
+  const providerSegment = provider ? `_${provider.replace(/[^a-zA-Z0-9-]/g, '_')}` : '';
+  
+  return `image-metadata/${encodedUrl}${providerSegment}_${hash}.json`;
 }
 
 /**
  * Check if an image is cached in Vercel Blob storage
  */
-export async function getCachedImage(url: string): Promise<CachedImageResult | null> {
+export async function getCachedImage(url: string, provider?: string): Promise<CachedImageResult | null> {
   try {
-    const imageKey = generateCacheKey(url);
-    const metadataKey = generateMetadataKey(url);
+    const imageKey = generateCacheKey(url, provider);
+    const metadataKey = generateMetadataKey(url, provider);
 
     console.log(`🔍 Checking cache for URL: ${url}`);
     console.log(`🔍 Image key: ${imageKey}`);
@@ -113,11 +125,12 @@ export async function cacheImage(
     base64: string;
     mediaType: string;
     revisedPrompt?: string;
-  }
+  },
+  provider?: string
 ): Promise<void> {
   try {
-    const imageKey = generateCacheKey(url);
-    const metadataKey = generateMetadataKey(url);
+    const imageKey = generateCacheKey(url, provider);
+    const metadataKey = generateMetadataKey(url, provider);
 
     console.log(`💾 Caching image for URL: ${url}`);
     console.log(`💾 Image key: ${imageKey}`);

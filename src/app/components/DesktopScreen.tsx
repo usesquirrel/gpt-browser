@@ -12,6 +12,8 @@ interface DesktopScreenProps {
   onHomeClick?: () => void;
   isGenerating?: boolean;
   isCached?: boolean;
+  provider?: string;
+  onProviderChange?: (provider: string) => void;
 }
 
 export default function DesktopScreen({
@@ -24,6 +26,8 @@ export default function DesktopScreen({
   onHomeClick,
   isGenerating,
   isCached,
+  provider = "gemini-2.5-flash-image-preview",
+  onProviderChange,
 }: DesktopScreenProps) {
   const [localUrl, setLocalUrl] = useState(url || "");
   const [scale, setScale] = useState(1);
@@ -234,6 +238,22 @@ export default function DesktopScreen({
                     d="M14 5l7 7m0 0l-7 7m7-7H3"
                   />
                 </svg>
+              </button>
+              <button
+                onClick={() => {
+                  const newProvider = provider === "gemini-2.5-flash-image-preview" 
+                    ? "gpt-image-1" 
+                    : "gemini-2.5-flash-image-preview";
+                  onProviderChange?.(newProvider);
+                }}
+                className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center transition-colors"
+                title={provider === "gemini-2.5-flash-image-preview" ? "Switch to GPT" : "Switch to Gemini"}
+              >
+                <img
+                  src={provider === "gemini-2.5-flash-image-preview" ? "/google.svg" : "/openai.svg"}
+                  alt={provider === "gemini-2.5-flash-image-preview" ? "Google Gemini" : "OpenAI"}
+                  className="w-5 h-5"
+                />
               </button>
               <button
                 onClick={() => setIsMuted(!isMuted)}

@@ -42,7 +42,7 @@ export function useImageGeneration() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const generateImage = useCallback(
-    async (url: string) => {
+    async (url: string, provider?: string) => {
       // Cancel any existing generation
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -61,7 +61,7 @@ export function useImageGeneration() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ url }),
+          body: JSON.stringify({ url, provider }),
           signal: abortController.signal,
         });
 

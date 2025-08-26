@@ -8,6 +8,7 @@ import { testPostHogObservability } from "./actions/test-posthog";
 
 export default function Home() {
   const [url, setUrl] = useState("");
+  const [provider, setProvider] = useState("gemini-2.5-flash-image-preview");
   const { state, isGenerating, generateImage, reset, cancel } =
     useImageGeneration();
   const posthog = usePostHog();
@@ -47,6 +48,7 @@ export default function Home() {
     // Track image generation attempt
     posthog?.capture("image_generation_started", {
       url: newUrl,
+      provider: provider,
       cached: false, // Will be updated later if cached
       llm_observability_enabled: true,
     });
@@ -57,7 +59,7 @@ export default function Home() {
     }
 
     setUrl(newUrl);
-    await generateImage(newUrl);
+    await generateImage(newUrl, provider);
   };
 
   // Track when image generation completes or fails
@@ -93,6 +95,8 @@ export default function Home() {
         }}
         isGenerating={isGenerating}
         isCached={state.cached}
+        provider={provider}
+        onProviderChange={setProvider}
       >
         <div className="w-full h-[460px]">
           {state.image ? (

@@ -401,6 +401,10 @@ export class GeminiImageProvider extends ImageProvider {
 
       const base64Data = imagePart.inlineData.data;
 
+      if (!base64Data) {
+        throw new Error("No base64 data found in Gemini response");
+      }
+
       // Convert base64 to Uint8Array
       const binaryString = atob(base64Data);
       const bytes = new Uint8Array(binaryString.length);
