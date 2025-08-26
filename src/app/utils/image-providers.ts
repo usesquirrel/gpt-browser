@@ -1,4 +1,5 @@
 import { posthogOpenAI } from "../lib/openai";
+import { GoogleGenAI, MediaResolution, Modality } from "@google/genai";
 
 export type ImageSize = `${number}x${number}`;
 export type ImageQuality = string;
@@ -202,33 +203,37 @@ export class GPTImage1Provider extends ImageProvider {
         requestParams
       );
 
-      const isVercel = process.env.VERCEL === '1';
-      console.log(`🖼️ Running on ${isVercel ? 'Vercel' : 'local'} environment`);
+      const isVercel = process.env.VERCEL === "1";
+      console.log(`🖼️ Running on ${isVercel ? "Vercel" : "local"} environment`);
 
       const stream = (await posthogOpenAI.images.generate(
         requestParams
       )) as any;
-      
+
       // Debug what we actually received
       console.log(`🖼️ Stream response type:`, {
-        isAsyncIterable: stream && typeof (stream as any)[Symbol.asyncIterator] === 'function',
-        isIterable: stream && typeof (stream as any)[Symbol.iterator] === 'function',
+        isAsyncIterable:
+          stream && typeof (stream as any)[Symbol.asyncIterator] === "function",
+        isIterable:
+          stream && typeof (stream as any)[Symbol.iterator] === "function",
         streamType: typeof stream,
         streamConstructor: (stream as any)?.constructor?.name,
         hasData: !!(stream as any)?.data,
         hasIterator: !!(stream as any)?.[Symbol.asyncIterator],
         keys: stream ? Object.keys(stream as any).slice(0, 10) : [], // First 10 keys only
       });
-      
+
       // Check if it's actually a non-streaming response
       if ((stream as any)?.data && !(stream as any)?.[Symbol.asyncIterator]) {
-        console.log(`🖼️ WARNING: Received non-streaming response despite stream: true`);
+        console.log(
+          `🖼️ WARNING: Received non-streaming response despite stream: true`
+        );
       }
 
       let finalImageSent = false;
       let partialCount = 0;
       let eventCount = 0;
-      
+
       // Handle the stream response
       for await (const event of stream as any) {
         eventCount++;
@@ -243,11 +248,11 @@ export class GPTImage1Provider extends ImageProvider {
         if (event.type === "image_generation.partial_image") {
           const idx = event.partial_image_index;
           const imageBase64 = event.b64_json;
-          
+
           if (imageBase64) {
             console.log(`🖼️ Received partial image ${idx}`);
             partialCount++;
-            
+
             // Convert base64 to Uint8Array
             const binaryString = atob(imageBase64);
             const bytes = new Uint8Array(binaryString.length);
@@ -263,14 +268,19 @@ export class GPTImage1Provider extends ImageProvider {
               partialIndex: idx,
             };
           }
-        } else if (event.type === "image_generation.completed" || event.b64_json) {
+        } else if (
+          event.type === "image_generation.completed" ||
+          event.b64_json
+        ) {
           // Final image event
           const imageBase64 = event.b64_json;
           const revisedPrompt = event.revised_prompt;
-          
+
           if (imageBase64) {
-            console.log(`🖼️ Received final image (after ${partialCount} partials)`);
-            
+            console.log(
+              `🖼️ Received final image (after ${partialCount} partials)`
+            );
+
             // Convert base64 to Uint8Array
             const binaryString = atob(imageBase64);
             const bytes = new Uint8Array(binaryString.length);
@@ -285,15 +295,17 @@ export class GPTImage1Provider extends ImageProvider {
               revisedPrompt,
               isPartial: false,
             };
-            
+
             finalImageSent = true;
           }
         }
       }
-      
+
       // If we didn't send a final image, something went wrong
       if (!finalImageSent) {
-        console.log(`🖼️ Stream ended without final image after ${eventCount} events`);
+        console.log(
+          `🖼️ Stream ended without final image after ${eventCount} events`
+        );
         throw new Error("Stream ended without receiving final image");
       }
     } catch (error) {
@@ -307,10 +319,149 @@ export class GPTImage1Provider extends ImageProvider {
   }
 }
 
+export class GeminiImageProvider extends ImageProvider {
+  readonly modelName = "gemini-2.5-flash-image-preview" as const;
+  // Gemini 2.5 flash image preview doesn't support size control
+  readonly supportedSizes: ReadonlyArray<ImageSize> = ["1024x1024"]; // Dummy value, not actually used
+  readonly supportedQualities = ["standard"] as const;
+  readonly defaultSize: ImageSize = "1024x1024"; // Dummy value, not actually used
+  readonly defaultQuality = "standard";
+  readonly maxPromptLength = 10000;
+
+  private ai: GoogleGenAI;
+
+  constructor() {
+    super();
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error(
+        "GEMINI_API_KEY environment variable is required for Gemini image generation"
+      );
+    }
+    this.ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  }
+
+  async generate(
+    prompt: string,
+    options?: ImageGenerationOptions
+  ): Promise<ImageGenerationResult> {
+    const validatedPrompt = this.validatePrompt(prompt);
+    // Size is not used for Gemini 2.5 flash image preview
+
+    console.log("🎨 Gemini Image Generation Request:", {
+      model: this.modelName,
+      prompt: validatedPrompt.substring(0, 100) + "...",
+    });
+
+    try {
+      console.log(
+        "🎨 Using generateContent for gemini-2.5-flash-image-preview..."
+      );
+      const response = await this.ai.models.generateContent({
+        model: this.modelName,
+        contents: validatedPrompt,
+        config: {
+          responseModalities: [Modality.IMAGE],
+        },
+      });
+
+      if (!response.candidates || response.candidates.length === 0) {
+        console.error(
+          "🎨 Full Gemini response (no candidates):",
+          JSON.stringify(response, null, 2)
+        );
+        throw new Error("No candidates returned from Gemini");
+      }
+
+      const candidate = response.candidates[0];
+      if (!candidate.content || !candidate.content.parts) {
+        console.error(
+          "🎨 Full Gemini response (no content parts):",
+          JSON.stringify(response, null, 2)
+        );
+        console.error(
+          "🎨 Candidate details:",
+          JSON.stringify(candidate, null, 2)
+        );
+        throw new Error("No content parts returned from Gemini");
+      }
+
+      // Find the image part
+      const imagePart = candidate.content.parts.find((part) => part.inlineData);
+      if (!imagePart || !imagePart.inlineData) {
+        console.error(
+          "🎨 Full Gemini response (no image data):",
+          JSON.stringify(response, null, 2)
+        );
+        console.error(
+          "🎨 Candidate content parts:",
+          JSON.stringify(candidate.content.parts, null, 2)
+        );
+        throw new Error("No image data found in Gemini response");
+      }
+
+      const base64Data = imagePart.inlineData.data;
+
+      // Convert base64 to Uint8Array
+      const binaryString = atob(base64Data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      console.log(
+        "🎨 Successfully generated image with Gemini, base64 length:",
+        base64Data.length
+      );
+
+      // Determine media type from inlineData mimeType or default to PNG
+      const mediaType = imagePart.inlineData.mimeType || "image/png";
+
+      return {
+        base64: base64Data,
+        uint8Array: bytes,
+        mediaType: mediaType,
+        revisedPrompt: validatedPrompt, // Gemini doesn't provide revised prompts
+      };
+    } catch (error) {
+      console.error("🎨 Gemini image generation failed:", error);
+      throw new Error(
+        `Gemini image generation failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  async *generateStream(
+    prompt: string,
+    options?: ImageGenerationOptions
+  ): AsyncGenerator<ImageGenerationResult, void, unknown> {
+    // Gemini doesn't support streaming for image generation yet
+    // So we'll just yield the final result
+    const result = await this.generate(prompt, options);
+    yield result;
+  }
+
+}
+
 export class ImageProviderFactory {
-  private static providers = new Map<string, ImageProvider>([
-    ["gpt-image-1", new GPTImage1Provider()],
-  ]);
+  private static providers = new Map<string, ImageProvider>();
+
+  static {
+    // Initialize providers with lazy loading to handle environment variables
+    this.providers.set("gpt-image-1", new GPTImage1Provider());
+    try {
+      this.providers.set(
+        "gemini-2.5-flash-image-preview",
+        new GeminiImageProvider()
+      );
+    } catch (error) {
+      console.warn(
+        "Gemini provider not available:",
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  }
 
   static getProvider(modelName: string): ImageProvider {
     const provider = this.providers.get(modelName);
@@ -343,10 +494,29 @@ export class ImageProviderFactory {
 export class SmartImageProvider {
   private fallbackChain: ImageProvider[];
 
-  constructor(preferredModels: string[] = ["gpt-image-1"]) {
-    this.fallbackChain = preferredModels.map((model) =>
-      ImageProviderFactory.getProvider(model)
-    );
+  constructor(
+    preferredModels: string[] = [
+      "gemini-2.5-flash-image-preview",
+      "gpt-image-1",
+    ]
+  ) {
+    this.fallbackChain = [];
+    for (const model of preferredModels) {
+      try {
+        const provider = ImageProviderFactory.getProvider(model);
+        this.fallbackChain.push(provider);
+      } catch (error) {
+        console.warn(
+          `Provider ${model} not available:`,
+          error instanceof Error ? error.message : String(error)
+        );
+      }
+    }
+
+    // Ensure we have at least one provider
+    if (this.fallbackChain.length === 0) {
+      throw new Error("No image providers available");
+    }
   }
 
   async generate(
@@ -385,7 +555,7 @@ export class SmartImageProvider {
   }
 
   selectOptimalProvider(prompt: string): ImageProvider {
-    // Always use GPT-Image-1
-    return ImageProviderFactory.getProvider("gpt-image-1");
+    // Prefer Gemini, fallback to GPT-Image-1
+    return this.fallbackChain[0];
   }
 }

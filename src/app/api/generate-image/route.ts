@@ -5,7 +5,7 @@ import { ImageProviderFactory } from "@/app/utils/image-providers";
 import { validateURL } from "@/app/utils/validate-url";
 import { getCachedImage, cacheImage } from "@/app/utils/image-cache";
 
-export const runtime = 'nodejs';
+export const runtime = "nodejs";
 export const maxDuration = 300; // Pro plan cap for Node.js Serverless
 
 export async function POST(request: NextRequest) {
@@ -13,14 +13,16 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { url } = body;
-    const model = "gpt-image-1"; // Always use GPT-Image-1
-    
+    const { url, provider: requestedProvider } = body;
+    // Default to Gemini, but allow override
+    const model = requestedProvider || "gemini-2.5-flash-image-preview";
+
     // Get distinctId from PostHog cookie or generate one
     const cookies = request.cookies;
-    const distinctId = cookies.get('ph_posthog')?.value || 
-                      request.headers.get('x-distinct-id') || 
-                      `anon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const distinctId =
+      cookies.get("ph_posthog")?.value ||
+      request.headers.get("x-distinct-id") ||
+      `anon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     if (!url) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
@@ -46,7 +48,7 @@ export async function POST(request: NextRequest) {
           );
 
           const cachedResult = await getCachedImage(url);
-          
+
           if (cachedResult && !cancelled) {
             console.log(`🎯 Cache hit for URL: ${url}`);
             controller.enqueue(
@@ -163,7 +165,10 @@ export async function POST(request: NextRequest) {
           );
 
           const describeStartTime = Date.now();
-          const imagePrompt = await generateImagePromptFromHTML(html, distinctId);
+          const imagePrompt = await generateImagePromptFromHTML(
+            html,
+            distinctId
+          );
           const describeTime = Date.now() - describeStartTime;
 
           // Check if cancelled after generating description
@@ -194,11 +199,11 @@ export async function POST(request: NextRequest) {
           const imageStartTime = Date.now();
           const provider = ImageProviderFactory.getProvider(model);
 
-          // Use tall format for better website visualization (scrollable view)
+          // Use tall format for GPT (Gemini doesn't support size control)
           const size = "1024x1536";
           // Use streaming with partial images
           const streamGenerator = provider.generateStream(
-            "Always generate the header and footer, and start at the top of the website described as follows: " +
+            "Create a detailed image of the website. Only include the website content. Never include browser interface. Always generate website header and footer, and start at the top of the website described as follows: " +
               imagePrompt,
             {
               size: size as `${number}x${number}`,
@@ -227,15 +232,13 @@ export async function POST(request: NextRequest) {
                 isPartial: true,
                 partialIndex: result.partialIndex,
               });
-              
+
               // Send the partial image data
-              controller.enqueue(
-                encoder.encode(`data: ${partialData}\n\n`)
-              );
-              
+              controller.enqueue(encoder.encode(`data: ${partialData}\n\n`));
+
               // Add padding comment to force flush (2KB padding to bypass any buffering)
               // This is a workaround for Vercel's potential buffering
-              const padding = `:${' '.repeat(2048)}\n\n`;
+              const padding = `:${" ".repeat(2048)}\n\n`;
               controller.enqueue(encoder.encode(padding));
             } else {
               // Final image
@@ -264,7 +267,7 @@ export async function POST(request: NextRequest) {
                   })}\n\n`
                 )
               );
-              
+
               finalImageSent = true;
             }
           }
@@ -304,7 +307,7 @@ export async function POST(request: NextRequest) {
       cancel() {
         // This is called when the client disconnects
         cancelled = true;
-        console.log('🚫 Stream cancelled by client');
+        console.log("🚫 Stream cancelled by client");
       },
     });
 
@@ -332,14 +335,16 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { url } = body;
-    const model = "gpt-image-1"; // Always use GPT-Image-1
-    
+    const { url, provider: requestedProvider } = body;
+    // Default to Gemini, but allow override
+    const model = requestedProvider || "gemini-2.5-flash-image-preview";
+
     // Get distinctId from PostHog cookie or generate one
     const cookies = request.cookies;
-    const distinctId = cookies.get('ph_posthog')?.value || 
-                      request.headers.get('x-distinct-id') || 
-                      `anon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const distinctId =
+      cookies.get("ph_posthog")?.value ||
+      request.headers.get("x-distinct-id") ||
+      `anon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
     if (!url) {
       return NextResponse.json({ error: "URL is required" }, { status: 400 });
@@ -347,7 +352,7 @@ export async function PUT(request: NextRequest) {
 
     // Step 0: Check cache first
     const cachedResult = await getCachedImage(url);
-    
+
     if (cachedResult) {
       console.log(`🎯 Cache hit for URL: ${url} (PUT endpoint)`);
       return NextResponse.json({
@@ -360,7 +365,9 @@ export async function PUT(request: NextRequest) {
       });
     }
 
-    console.log(`🔍 Cache miss for URL: ${url}, generating new image (PUT endpoint)`);
+    console.log(
+      `🔍 Cache miss for URL: ${url}, generating new image (PUT endpoint)`
+    );
 
     // Step 1: Validate URL
     const validation = await validateURL(url);
@@ -381,10 +388,10 @@ export async function PUT(request: NextRequest) {
     // Step 4: Generate image from description
     const provider = ImageProviderFactory.getProvider(model);
 
-    // Use tall format for better website visualization (scrollable view)
+    // Use tall format for GPT (Gemini doesn't support size control)
     const size = "1024x1536";
     const result = await provider.generate(
-      "Always generate the header and footer, and start at the top of the website described as follows: " +
+      "Create a detailed image of the website. Only include the website content. Never include browser interface. Always generate website header and footer, and start at the top of the website described as follows: " +
         imagePrompt,
       {
         size: size as `${number}x${number}`,
@@ -399,7 +406,10 @@ export async function PUT(request: NextRequest) {
       mediaType: result.mediaType,
       revisedPrompt: result.revisedPrompt,
     }).catch((error) => {
-      console.error(`❌ Failed to cache image for ${url} (PUT endpoint):`, error);
+      console.error(
+        `❌ Failed to cache image for ${url} (PUT endpoint):`,
+        error
+      );
     });
 
     return NextResponse.json({

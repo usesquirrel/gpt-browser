@@ -41,13 +41,13 @@ Be specific about colors, sizes, alignment, and visual styling.
 
 <constraints>
 Maximum ${maxOutputTokens} tokens. Be concise but visually descriptive.
-</constraints>`
+</constraints>`,
       },
       {
         role: "user",
-        content: htmlContent
-      }
-    ]
+        content: htmlContent,
+      },
+    ],
   });
 
   return response.choices[0]?.message?.content || "";
@@ -55,11 +55,12 @@ Maximum ${maxOutputTokens} tokens. Be concise but visually descriptive.
 
 export async function generateImagePromptFromHTML(
   htmlContent: string,
-  distinctId: string = 'anonymous'
+  distinctId: string = "anonymous"
 ): Promise<string> {
   try {
     const response = await posthogOpenAI.chat.completions.create({
-      model: "gpt-5-mini",
+      model: "gpt-5-nano",
+      reasoning_effort: "low",
       messages: [
         {
           role: "system",
@@ -92,13 +93,13 @@ Analyze the HTML and create a detailed prompt for an AI image generator to recre
 <output-format>
 Write a single flowing paragraph that an image AI can use to generate the website layout.
 Start with: "A website design with..."
-</output-format>`
+</output-format>`,
         },
         {
           role: "user",
-          content: htmlContent
-        }
-      ]
+          content: htmlContent,
+        },
+      ],
     });
 
     const text = response.choices[0]?.message?.content || "";
@@ -115,7 +116,7 @@ Start with: "A website design with..."
     return text.trim();
   } catch (error) {
     console.error("Error generating image prompt from HTML:", error);
-    
+
     // Return a fallback prompt if generation fails
     return `A website design with a modern layout featuring a header navigation bar at the top, a main content area with text and sections, and a footer at the bottom. The page has a clean, professional appearance with structured content, headings, paragraphs, and standard web elements arranged in a typical website layout.`;
   }
