@@ -339,20 +339,12 @@ export default function Home() {
             <div className="w-full h-full bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex flex-col p-4">
               {/* Header Section - Compact horizontal layout */}
               <div className="flex items-center justify-center gap-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <svg
-                    className="w-5 h-5 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"
-                    />
-                  </svg>
+                <div className="w-10 h-10 rounded-xl overflow-hidden">
+                  <img
+                    src="/squirrel-browser.png"
+                    alt="GPT Browser"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
