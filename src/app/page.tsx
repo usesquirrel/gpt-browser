@@ -14,11 +14,32 @@ export default function Home() {
   const posthog = usePostHog();
   const postitRef = useRef<HTMLDivElement | null>(null);
   const [postitTop, setPostitTop] = useState<number | null>(null);
+  const [blockedByAdult, setBlockedByAdult] = useState(false);
+
+  const isAdultUrl = (input: string): boolean => {
+    try {
+      const hostname = new URL(input).hostname.toLowerCase();
+      const adultKeywords = [
+        "pornhub",
+        "xvideos",
+        "xnxx",
+        "redtube",
+        "youporn",
+        "brazzers",
+        "xhamster",
+        "porn",
+      ];
+      return adultKeywords.some((k) => hostname.includes(k));
+    } catch {
+      return /pornhub|xvideos|xnxx|redtube|youporn|brazzers|xhamster|\bporn\b/i.test(input);
+    }
+  };
 
   // Pin post-it to the bottom of the desktop screen responsively
   useEffect(() => {
+    const scaled = document.getElementById("desktop-screen-scaled");
+
     const updatePosition = () => {
-      const scaled = document.getElementById("desktop-screen-scaled");
       const postit = postitRef.current;
       if (!scaled || !postit) return;
 
@@ -42,12 +63,30 @@ export default function Home() {
       setPostitTop(finalTop);
     };
 
+    // Initial calculations (twice to catch post-layout changes)
     updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, { passive: true });
+    const raf1 = requestAnimationFrame(updatePosition);
+    const raf2 = requestAnimationFrame(updatePosition);
+
+    const onResizeOrScroll = () => updatePosition();
+    window.addEventListener("resize", onResizeOrScroll);
+    window.addEventListener("scroll", onResizeOrScroll, { passive: true });
+    window.addEventListener("load", onResizeOrScroll);
+
+    // Observe the scaled container for size changes (e.g., scale updates)
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && scaled) {
+      ro = new ResizeObserver(() => updatePosition());
+      ro.observe(scaled);
+    }
+
     return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition);
+      window.removeEventListener("resize", onResizeOrScroll);
+      window.removeEventListener("scroll", onResizeOrScroll);
+      window.removeEventListener("load", onResizeOrScroll);
+      if (ro) ro.disconnect();
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
     };
   }, []);
 
@@ -82,6 +121,21 @@ export default function Home() {
 
   const handleNavigate = async (newUrl: string) => {
     if (!newUrl) return;
+
+    // Reset any previous adult block when attempting a new navigation
+    setBlockedByAdult(false);
+
+    // Block adult domains client-side and show local GIF instead
+    if (isAdultUrl(newUrl)) {
+      setUrl(newUrl);
+      setBlockedByAdult(true);
+      reset();
+      posthog?.capture("adult_navigation_blocked", {
+        url: newUrl,
+        reason: "adult_site",
+      });
+      return;
+    }
 
     // Track image generation attempt
     posthog?.capture("image_generation_started", {
@@ -202,6 +256,7 @@ export default function Home() {
         onNavigate={handleNavigate}
         onHomeClick={() => {
           setUrl("");
+          setBlockedByAdult(false);
           reset();
         }}
         isGenerating={isGenerating}
@@ -210,7 +265,19 @@ export default function Home() {
         onProviderChange={setProvider}
       >
         <div className="w-full h-[460px]">
-          {state.image ? (
+          {blockedByAdult ? (
+            <img
+              src="/caught-in-4k.gif"
+              alt="Blocked: Caught in 4K"
+              className="w-full h-auto min-w-full"
+              style={{
+                display: "block",
+                minHeight: "100%",
+                objectFit: "contain",
+                objectPosition: "top center",
+              }}
+            />
+          ) : state.image ? (
             // Final image - highest priority
             <img
               src={`data:${state.mediaType};base64,${state.image}`}
@@ -320,6 +387,27 @@ export default function Home() {
                         </h3>
                         <p className="text-purple-600 text-md truncate">
                           squirrelrecruit.com
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      handleNavigate("https://browser.squirrelrecruit.com")
+                    }
+                    className="group relative bg-gradient-to-br from-amber-50 to-white rounded-xl p-3 shadow-lg hover:shadow-xl transition-all duration-300 border border-amber-200 hover:border-amber-300 hover:scale-102 active:scale-95"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-700 rounded-lg flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300 flex-shrink-0">
+                        <span className="text-white text-lg">🌐</span>
+                      </div>
+                      <div className="text-left min-w-0 flex-1">
+                        <h3 className="font-semibold text-gray-900 text-lg truncate">
+                          GPT Browser
+                        </h3>
+                        <p className="text-amber-600 text-md truncate">
+                          browser.squirrelrecruit.com
                         </p>
                       </div>
                     </div>

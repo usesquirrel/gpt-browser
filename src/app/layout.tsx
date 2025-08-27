@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { CSPostHogProvider } from './providers/PostHogProvider';
@@ -18,6 +18,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "GPT Browser - AI-Powered Website Visualizer",
   description: "Generate AI-powered visual representations of websites using GPT-Image models",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  minimumScale: 1,
+  viewportFit: "cover",
+  userScalable: true,
 };
 
 export default function RootLayout({
