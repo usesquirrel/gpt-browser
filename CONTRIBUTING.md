@@ -33,12 +33,12 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 ### Pull Requests
 
 1. **Fork the repo** and create your branch from `main`
-2. **Install dependencies**: `yarn install`
+2. **Install dependencies**: `pnpm install`
 3. **Make your changes** following the code style guide
 4. **Add tests** if applicable
-5. **Ensure the test suite passes**: `yarn test` (if tests exist)
-6. **Run linting**: `yarn lint`
-7. **Build the project**: `yarn build`
+5. **Ensure the test suite passes**: `pnpm test` (if tests exist)
+6. **Run linting**: `pnpm lint`
+7. **Build the project**: `pnpm build`
 8. **Commit your changes** with a descriptive commit message
 9. **Push to your fork** and submit a pull request
 
@@ -46,8 +46,9 @@ Enhancement suggestions are tracked as GitHub issues. When creating an enhanceme
 
 ### Prerequisites
 
-- Node.js 18+ and yarn
+- Node.js 18+ and pnpm
 - OpenAI API key
+- Gemini API key (optional)
 - Vercel account (for blob storage)
 
 ### Local Development
@@ -60,7 +61,7 @@ cd gpt-browser
 
 2. Install dependencies:
 ```bash
-yarn install
+pnpm install
 ```
 
 3. Set up environment:
@@ -71,7 +72,7 @@ cp .env.example .env.local
 
 4. Run development server:
 ```bash
-yarn dev
+pnpm dev
 ```
 
 ### Project Structure

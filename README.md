@@ -99,8 +99,9 @@ gpt-browser/
 
 ### Prerequisites
 
-- Node.js 18+ and npm/yarn
+- Node.js 18+ and pnpm
 - OpenAI API key with access to GPT-5-nano, GPT-5-mini, and GPT-Image-1
+- Gemini API key (optional, for Gemini image generation)
 - Vercel account (for Blob storage and deployment)
 - PostHog account (optional, for analytics)
 
@@ -114,9 +115,7 @@ cd gpt-browser
 
 2. **Install dependencies:**
 ```bash
-yarn install
-# or
-npm install
+pnpm install
 ```
 
 3. **Set up environment variables:**
@@ -128,6 +127,9 @@ cp .env.example .env.local
 ```env
 # Required
 OPENAI_API_KEY=sk-proj-...                    # Your OpenAI API key
+
+# Optional - Gemini Image Generation
+GEMINI_API_KEY=...                            # Google Gemini API key
 
 # Required for caching
 BLOB_READ_WRITE_TOKEN=vercel_blob_...         # Vercel Blob storage token
@@ -145,9 +147,7 @@ KV_REST_API_READ_ONLY_TOKEN=...
 
 5. **Run the development server:**
 ```bash
-yarn dev
-# or
-npm run dev
+pnpm dev
 ```
 
 6. **Open [http://localhost:3000](http://localhost:3000)**
@@ -349,8 +349,8 @@ We welcome contributions! Please follow these guidelines:
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
 3. Make your changes
-4. Run linting: `yarn lint`
-5. Build to verify: `yarn build`
+4. Run linting: `pnpm lint`
+5. Build to verify: `pnpm build`
 6. Commit with descriptive message
 7. Push to your fork
 8. Open a Pull Request

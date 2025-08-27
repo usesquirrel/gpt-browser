@@ -124,7 +124,7 @@ export default function DesktopScreen({
 
   return (
     <div
-      className="fixed inset-0 w-full h-[505px] relative"
+      className="fixed inset-0 w-full h-[505px]"
       style={{ margin: 0, padding: 0 }}
     >
       {/* Scaled container that maintains aspect ratio */}
@@ -161,7 +161,7 @@ export default function DesktopScreen({
         >
           <div className="relative w-full h-full bg-gray-100 flex flex-col">
             {/* Browser URL Bar - Always visible */}
-            <div className="w-full bg-white border-b border-gray-300 flex items-center gap-3 px-2 py-1">
+            <div id="browser-url-bar" className="w-full bg-white border-b border-gray-300 flex items-center gap-3 px-2 py-1">
               <button
                 onClick={onHomeClick}
                 className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 text-purple-400 flex items-center justify-center transition-colors"
