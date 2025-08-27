@@ -1,6 +1,8 @@
 # GPT Browser 🌐✨
 
-An AI-powered web browser visualization tool that generates realistic screenshot-like images of websites using OpenAI's GPT-Image-1 model. Enter any URL and watch as AI creates a visual representation of what the website looks like, complete with progressive image streaming for real-time feedback.
+An AI-powered web browser visualization tool that generates realistic screenshot-like images of websites using AI models (OpenAI's GPT-Image-1 and Google's Gemini). Enter any URL and watch as AI creates a visual representation of what the website looks like, complete with progressive image streaming for real-time feedback.
+
+## 🚀 [**DEMO**](https://browser.squirrelrecruit.com/)
 
 ![GPT Browser Demo](https://img.shields.io/badge/demo-live-green) ![Version](https://img.shields.io/badge/version-0.1.0-blue) ![License](https://img.shields.io/badge/license-MIT-orange)
 
@@ -20,7 +22,7 @@ This is particularly useful for:
 
 ## ✨ Key Features
 
-- **🎨 AI-Generated Website Visualizations**: Creates realistic website screenshots using GPT-Image-1
+- **🎨 AI-Generated Website Visualizations**: Creates realistic website screenshots using GPT-Image-1 or Gemini with provider switching
 - **🖥️ Desktop Browser Simulation**: Displays results in a simulated desktop environment with browser chrome
 - **⚡ Real-time Streaming**: Shows partial images as they're generated for progressive loading
 - **💾 Smart Caching System**: Uses Vercel Blob storage to cache generated images (instant loads on repeat visits)
@@ -38,6 +40,7 @@ This is particularly useful for:
   - OpenAI GPT-5-nano (HTML cleaning, URL validation)
   - OpenAI GPT-5-mini (HTML description)
   - OpenAI GPT-Image-1 (image generation)
+  - Google Gemini-2.5-flash-image-preview (alternative image generation)
 - **Storage**: Vercel Blob Storage for image caching
 - **Analytics**: PostHog for web analytics and LLM observability
 - **Deployment**: Vercel with Edge Functions
