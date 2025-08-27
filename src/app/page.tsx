@@ -13,43 +13,42 @@ export default function Home() {
     useImageGeneration();
   const posthog = usePostHog();
   const postitRef = useRef<HTMLDivElement | null>(null);
-  const [stickToBottom, setStickToBottom] = useState(false);
+  const [postitTop, setPostitTop] = useState<number | null>(null);
 
-  // Dynamically switch between top and bottom alignment if overlapping important UI
+  // Pin post-it to the bottom of the desktop screen responsively
   useEffect(() => {
-    const detectOverlapAndPosition = () => {
-      const urlBar = document.getElementById("browser-url-bar");
+    const updatePosition = () => {
+      const scaled = document.getElementById("desktop-screen-scaled");
       const postit = postitRef.current;
-      if (!urlBar || !postit) return;
+      if (!scaled || !postit) return;
 
-      const urlRect = urlBar.getBoundingClientRect();
+      const scaledRect = scaled.getBoundingClientRect();
 
-      // Measure post-it size (current position is fine for width/height)
-      const measured = postit.getBoundingClientRect();
-      const postWidth = measured.width;
-      const postHeight = measured.height;
+      // Derive the current scale from the scaled container height.
+      // Matches DesktopScreen's screenHeight default: 900px
+      const screenHeightPx = 900;
+      const monitorBottomOriginalY = 675; // from DesktopScreen monitorBottomRight.y
+      const scale = scaledRect.height / screenHeightPx;
+      const monitorBottomViewportY = scaledRect.top + (monitorBottomOriginalY * scale);
 
-      // Hypothetical top-aligned rect (Tailwind top-4 ~= 16px)
-      const topPx = 16;
-      const postLeft = (window.innerWidth / 2) - (postWidth / 2);
-      const postTopRect = {
-        left: postLeft,
-        right: postLeft + postWidth,
-        top: topPx,
-        bottom: topPx + postHeight,
-      };
+      // Account for the masking tape overlap above the card and a small gap
+      const tapeOverlapAboveCardPx = 10; // ::before is positioned top:-10px
+      const gapBelowPx = 8; // visual spacing from the bottom of the screen
 
-      const intersects = !(postTopRect.right < urlRect.left ||
-                           postTopRect.left > urlRect.right ||
-                           postTopRect.bottom < urlRect.top ||
-                           postTopRect.top > urlRect.bottom);
-
-      setStickToBottom(intersects);
+      const desiredTop = monitorBottomViewportY + gapBelowPx + tapeOverlapAboveCardPx;
+      const postHeight = postit.offsetHeight || 0;
+      const maxTop = window.innerHeight - postHeight - 8; // keep fully visible within viewport
+      const finalTop = Math.min(desiredTop, maxTop);
+      setPostitTop(finalTop);
     };
 
-    detectOverlapAndPosition();
-    window.addEventListener("resize", detectOverlapAndPosition);
-    return () => window.removeEventListener("resize", detectOverlapAndPosition);
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, { passive: true });
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition);
+    };
   }, []);
 
   // Test PostHog observability on page load
@@ -127,7 +126,8 @@ export default function Home() {
       {/* Squirrel Logo */}
       <div 
         ref={postitRef}
-        className={`fixed left-1/2 -translate-x-1/2 transform z-50 ${stickToBottom ? 'bottom-4' : 'top-4'}`}
+        className="absolute left-1/2 -translate-x-1/2 transform z-50"
+        style={{ top: postitTop ?? undefined }}
       >
         <style jsx>{`
           .postit-card {

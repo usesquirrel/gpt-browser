@@ -124,11 +124,13 @@ export default function DesktopScreen({
 
   return (
     <div
+      id="desktop-screen-root"
       className="fixed inset-0 w-full h-[505px]"
       style={{ margin: 0, padding: 0 }}
     >
       {/* Scaled container that maintains aspect ratio */}
       <div
+        id="desktop-screen-scaled"
         className="absolute top-0 left-0"
         style={{
           width: `${screenWidth}px`,
